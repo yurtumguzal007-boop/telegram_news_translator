@@ -33,7 +33,8 @@ def start_health_server():
     except Exception as e:
         print(f"Health server error: {e}")
 
-def run():
+def run(max_runtime_seconds: int = 0):
+    start_time = time.time()
     # Start web server for cloud hosting (Render)
     threading.Thread(target=start_health_server, daemon=True).start()
 
@@ -95,6 +96,10 @@ def run():
                     else:
                         print(f"⚠️ تەرجىمە ئېلىنمىدى (ID: {msg_id})")
 
+            if max_runtime_seconds > 0 and (time.time() - start_time) >= max_runtime_seconds:
+                print(f"⏱ بەلگىلەنگەن ۋاقىت توشتى ({max_runtime_seconds} سېكۇنت). كېيىنكى ئەۋلادقا ئۆتكۈزۈلىدۇ...")
+                break
+
             time.sleep(config.CHECK_INTERVAL)
 
         except KeyboardInterrupt:
@@ -105,4 +110,7 @@ def run():
             time.sleep(10)
 
 if __name__ == "__main__":
-    run()
+    duration = int(os.environ.get("MAX_RUNTIME_SECONDS", "0"))
+    if len(sys.argv) > 1 and sys.argv[1].isdigit():
+        duration = int(sys.argv[1])
+    run(duration)

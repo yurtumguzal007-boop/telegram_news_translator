@@ -11,8 +11,8 @@ services:
       - key: TARGET_CHANNEL
         value: "@DUNYA_NEWS1"
       - key: GEMINI_API_KEY
-        value: AQ.Ab8RN6KGvIiWwxSLnropKcPfjluCH-FRFT6DRWbOd3v8sMHOfA
+        sync: false
       - key: BOT_TOKEN
-        value: 8715293160:AAHSh7rCNLDPAn7mIEUtSLnPmlA71A-bTO4
+        sync: false
       - key: CHECK_INTERVAL
         value: "25"
