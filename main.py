@@ -12,6 +12,7 @@ from translator import translate_news
 from news_fetcher import fetch_latest_news
 import bot_sender
 import threading
+import requests
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -33,10 +34,27 @@ def start_health_server():
     except Exception as e:
         print(f"Health server error: {e}")
 
+def start_keep_alive_pinger():
+    def pinger():
+        time.sleep(60)
+        url = os.environ.get("RENDER_EXTERNAL_URL", "https://telegram-news-translator.onrender.com")
+        print(f"💓 [Keep-Alive] ئاپتوماتىك ئويغاق تۇرۇش سىستېمىسى قوزغالدى: {url}")
+        while True:
+            try:
+                time.sleep(480)  # ھەر 8 مىنۇتتا بىر قېتىم سىستېمىنى چېكىپ ئۇخلاپ قېلىشنىڭ ئالدىنى ئالىدۇ
+                res = requests.get(url, timeout=20)
+                print(f"💓 [Keep-Alive] بۇلۇت ئۇلىنىشى تەكشۈرۈلدى (ھالەت: {res.status_code})")
+            except Exception as e:
+                print(f"⚠️ [Keep-Alive] تەكشۈرۈش كاشىلىسى: {e}")
+
+    threading.Thread(target=pinger, daemon=True).start()
+
 def run(max_runtime_seconds: int = 0):
     start_time = time.time()
     # Start web server for cloud hosting (Render)
     threading.Thread(target=start_health_server, daemon=True).start()
+    # Start built-in keep-alive pinger so Render never sleeps
+    start_keep_alive_pinger()
 
     print("=" * 60)
     print("🚀 تېلېگرامما ئاپتوماتىك خەۋەر تەرجىمە ۋە تارقىتىش سىستېمىسى")
