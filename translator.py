@@ -1,4 +1,4 @@
-﻿import re
+import re
 from google import genai
 import config
 
@@ -25,7 +25,7 @@ SYSTEM_INSTRUCTION = """
    📍 🇮🇶 ئىراق
    (ئەگەر كۆپ دۆلەت ئوتتۇرىسىدا ياكى ئومۇمىي خەلقئارا بولسا، ئاساسلىق ئورۇننى ياز).
 
-2. ئىككىنچى قۇردىن باشلاپ: كەسپىي، راۋان ئۇيغۇرچە خەۋەر مەزمۇنىنى ياز. «عاجل» بولسا «🔴 جىددىي خەۋەر | » دەپ باشلا.
+2. ئىككىنچى قۇردىن باشلاپ: بىۋاسىتە كەسپىي، راۋان ئۇيغۇرچە خەۋەر مەزمۇنىنى ياز. «جىددىي خەۋەر»، «جىددى خەۋەر»، «عاجل» دېگەندەك سۆزلەرنى كىرگۈزمە، پەقەت خەۋەرنىڭ ئەسلى مەزمۇنىدىن باشلاپ ياز.
 
 3. گرامماتىكا ۋە ئىملا:
    - پۈتۈنلەي قېلىپلاشقان ئۇيغۇر ئەرەپ يېزىقى بىلەن ياز. لاتىن يېزىقى، پىنيىن قاتارلىقلارنى زادىلا قوشما.
@@ -47,8 +47,16 @@ def clean_arabic_text(text: str) -> str:
     for line in text.split('\n'):
         if any(bad in line for bad in ['اشترك في قناتنا', 'تابعونا على', 'تطبيق الجزيرة', 'WhatsApp', 'واتساب']):
             continue
+        # عاجل نى تازىلاش
+        line = re.sub(r'^\s*عاجل\s*[:|丨-]?\s*', '', line)
         lines.append(line)
     return '\n'.join(lines).strip()
+
+def clean_translated_output(text: str) -> str:
+    # «جىددىي خەۋەر» ياكى «جىددى خەۋەر» ۋە ئۇنىڭ بەلگىلىرىنى تولۇق تازىلاش
+    cleaned = re.sub(r'🔴?\s*جىددى[ي]?\s*خەۋەر\s*[:|丨\-،,]?\s*', '', text)
+    # ئارتۇق بوش قۇر ۋە بوشلۇقلارنى رەتلەش
+    return cleaned.strip()
 
 def translate_news(arabic_text: str) -> str:
     cleaned = clean_arabic_text(arabic_text)
@@ -67,10 +75,11 @@ def translate_news(arabic_text: str) -> str:
             config={'system_instruction': SYSTEM_INSTRUCTION}
         )
         if response and response.text:
-            translated = response.text.strip()
+            translated = clean_translated_output(response.text)
             return translated + config.CHANNEL_FOOTER
     except Exception as e:
         print(f"[تەرجىمە خاتالىقى]: {e}")
+        return ""
         return ""
 
     return ""
